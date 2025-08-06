@@ -1,0 +1,89 @@
+services:
+  adguard-home:
+    image: adguard/adguardhome:latest
+    container_name: adguard-home
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3000:80/tcp"
+    volumes:
+      - adguard_work:/opt/adguardhome/work
+      - adguard_conf:/opt/adguardhome/conf
+    networks:
+      - homelab-network
+
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt # <-- THIS LINE WAS ADDED BACK
+    networks:
+      - homelab-network
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    command: -H unix:///var/run/docker.sock
+    networks:
+      - homelab-network
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - TZ=Europe/Paris
+      - N8N_SECURE_COOKIE=false
+    networks:
+      - homelab-network
+
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+    volumes:
+      - stirling_data:/usr/share/tessdata
+      - stirling_training_data:/data/trainingData
+      - stirling_logs:/logs
+    networks:
+      - homelab-network
+
+  omni-tools:
+    image: iib0011/omni-tools:latest
+    container_name: omni-tools
+    restart: unless-stopped
+    volumes:
+      - omni_tools_data:/app/data
+    networks:
+      - homelab-network
+
+networks:
+  homelab-network:
+    driver: bridge
+
+volumes:
+  adguard_work:
+  adguard_conf:
+  npm_data:
+  npm_letsencrypt: # <-- THIS LINE WAS ADDED BACK
+  portainer_data:
+  n8n_data:
+  stirling_data:
+  stirling_training_data:
+  stirling_logs:
+  omni_tools_data:

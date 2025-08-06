@@ -1,0 +1,15 @@
+# Ignore Docker volumes and data
+adguard_work/
+adguard_conf/
+npm_data/
+npm_letsencrypt/
+portainer_data/
+n8n_data/
+stirling_data/
+stirling_training_data/
+stirling_logs/
+omni_tools_data/
+
+# Ignore common sensitive files
+.env
+*.log
