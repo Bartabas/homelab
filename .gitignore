@@ -13,3 +13,4 @@ omni_tools_data/
 # Ignore common sensitive files
 .env
 *.log
+*.code-workspace
