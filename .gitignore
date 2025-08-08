@@ -11,6 +11,7 @@ stirling_logs/
 omni_tools_data/
 
 # Ignore common sensitive files
-.env
+*.env
 *.log
 *.code-workspace
+*.ovpn

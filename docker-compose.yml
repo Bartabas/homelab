@@ -23,10 +23,128 @@ services:
       - '81:81'
     volumes:
       - npm_data:/data
-      - npm_letsencrypt:/etc/letsencrypt # <-- THIS LINE WAS ADDED BACK
+      - npm_letsencrypt:/etc/letsencrypt
     networks:
       - homelab-network
 
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    networks:
+      - homelab-network
+    ports:
+      - "8096:8096/tcp"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - jellyfin_config:/config
+      - /home/nuc/data/media:/media
+    devices:
+      - /dev/dri:/dev/dri
+
+  # --- AUTOMATION STACK ---
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp
+      - 6881:6881/tcp
+      - 6881:6881/udp
+    volumes:
+      - gluetun_data:/gluetun
+      - ./gluetun-config:/gluetun/custom
+    env_file:
+      - ./gluetun.env
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=openvpn
+      - OPENVPN_CUSTOM_CONFIG=/gluetun/custom/my-vpn.ovpn
+      - DNS_PLAINTEXT_ADDRESS=9.9.9.9
+      - DNS_CACHING=off
+    networks:
+      - homelab-network
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    network_mode: service:gluetun # <-- This is correct
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - WEBUI_PORT=8888
+    volumes:
+      - qbittorrent_config:/config
+      - /home/nuc/data/downloads:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    networks:
+      - homelab-network
+    ports:
+      - "9696:9696"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - prowlarr_config:/config
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    networks:
+      - homelab-network
+    ports:
+      - "7878:7878"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - radarr_config:/config
+      - /home/nuc/data:/data
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    networks:
+      - homelab-network
+    ports:
+      - "8989:8989"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - sonarr_config:/config
+      - /home/nuc/data:/data
+
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    networks:
+      - homelab-network
+    ports:
+      - "8191:8191"
+    environment:
+      - LOG_LEVEL=info
+      - TZ=Europe/Paris
+
+  # --- Other Services ---
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -80,7 +198,13 @@ volumes:
   adguard_work:
   adguard_conf:
   npm_data:
-  npm_letsencrypt: # <-- THIS LINE WAS ADDED BACK
+  npm_letsencrypt:
+  jellyfin_config:
+  gluetun_data:
+  qbittorrent_config:
+  prowlarr_config:
+  radarr_config:
+  sonarr_config:
   portainer_data:
   n8n_data:
   stirling_data:
